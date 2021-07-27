@@ -1,6 +1,8 @@
 package file
 
 import (
+	"encoding/json"
+	"filepath"
 	"fmt"
 	"io/ioutil"
 	"path"
@@ -31,18 +33,22 @@ func NewFileClient(filepath []string, filter string) (*Client, error) {
 }
 
 func readFile(path string, vars map[string]string) error {
-	yamlMap := make(map[interface{}]interface{})
+	fileMap := make(map[interface{}]interface{})
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
 	}
 
-	err = yaml.Unmarshal(data, &yamlMap)
+	switch filepath.Ext(path) {
+		case ".json": err = json.Unmarshal(data, &fileMap)
+		case ".yml", ".yaml": err = yaml.Unmarshal(data, &fileMap)
+		default: err = fmt.Errorf("Invalid file extentsion. YAML or JSON only.")
+	}
 	if err != nil {
 		return err
 	}
 
-	err = nodeWalk(yamlMap, "/", vars)
+	err = nodeWalk(fileMap, "/", vars)
 	if err != nil {
 		return err
 	}
